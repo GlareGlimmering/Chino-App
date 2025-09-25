@@ -5,8 +5,8 @@ import 'package:http/http.dart' as http;
 
 class NewsText{
   String texts;
-  bool isBold;
-  NewsText({required this.texts,this.isBold=false});
+  bool isFavorite;
+  NewsText({required this.texts,this.isFavorite=false});
 }
 
 final newsProvider=ChangeNotifierProvider((ref)=>News());
@@ -21,6 +21,11 @@ class News extends ChangeNotifier{
 
   void clearAllData(){
     _newsList.clear();
+    notifyListeners();
+  }
+
+  void changeTextState(int index) {
+    _newsList[index].isFavorite=!_newsList[index].isFavorite;
     notifyListeners();
   }
 
@@ -53,7 +58,6 @@ final messageProvider = FutureProvider<Map<String, dynamic>>((ref) async {
       throw Exception("Failed to load data. Status: ${response.statusCode}");
     }
   } catch (e) {
-    // 处理网络错误等
     throw Exception("Network or other error: $e");
   }
 });
@@ -100,6 +104,7 @@ class _ChinoHomeState extends ConsumerState<ChinoHome> {
   @override
   Widget build(BuildContext context) {
     final newsAsync = ref.watch(newsProvider);
+    final newsAsyncRead=ref.read(newsProvider);
     final httpAsync = ref.watch(messageProvider);
 
     return Scaffold(
@@ -111,9 +116,47 @@ class _ChinoHomeState extends ConsumerState<ChinoHome> {
                 controller: _scrollController,
                 itemCount: newsAsync.newsList.length,
                 itemBuilder: (BuildContext context, int index) {
+
                   return Card(
+                    elevation: newsAsyncRead.newsList[index].isFavorite?5:null,
+                    color: newsAsyncRead.newsList[index].isFavorite?Colors.orangeAccent:null,
+
                     child: ListTile(
-                      title: Text(newsAsync.newsList[index].texts),
+                      title: Text(
+                          newsAsync.newsList[index].texts,
+                        style: TextStyle(
+                          fontWeight: newsAsyncRead.newsList[index].isFavorite?FontWeight.bold:null,
+                        ),
+                      ),
+                      trailing: IconButton(
+                          onPressed: (){
+                            newsAsync.changeTextState(index);
+                          },
+                          icon: Icon(
+                              Icons.favorite,
+                            color: newsAsyncRead.newsList[index].isFavorite?Colors.redAccent:null,
+                          )
+                      ),
+
+                      // onTap: (){
+                      //   showDialog(
+                      //       context: context,
+                      //       builder: (context){
+                      //         return AlertDialog(
+                      //           content: TextButton(
+                      //               onPressed:(){
+                      //                 newsAsync.changeTextState(index);
+                      //                 Navigator.pop(context);
+                      //               },
+                      //               child: Icon(Icons.favorite)
+                      //           ),
+                      //
+                      //
+                      //         );
+                      //       },
+                      //   );
+                      // },
+
                     ),
                   );
                 },
